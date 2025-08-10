@@ -34,6 +34,25 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
         .get();
   }
 
+  // --- LOGOUT FUNCTION ---
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to the welcome/login screen and remove all previous routes
+      // IMPORTANT: Replace '/welcome' with your actual route for the login/welcome page.
+      Get.offAllNamed('/login');
+    } catch (e) {
+      // Show an error message if sign-out fails
+      Get.snackbar(
+        'Logout Error',
+        'An error occurred while logging out. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade400,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,10 +71,17 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.edit_rounded, color: primaryColor),
+            tooltip: 'Edit Profile',
             onPressed: () {
               // Navigate to the details page to edit
               Get.toNamed('/tutorDetails');
             },
+          ),
+          // --- LOGOUT BUTTON ADDED HERE ---
+          IconButton(
+            icon: Icon(Icons.logout_rounded, color: Colors.red.shade400),
+            tooltip: 'Logout',
+            onPressed: _logout, // Calls the logout function
           ),
         ],
       ),
@@ -143,7 +169,7 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
                           _buildInfoRow(
                             Icons.calendar_today_outlined,
                             'Year of Passing',
-                            data['yearOfPassing'] ?? 'N/A',
+                            data['yearOfPassing']?.toString() ?? 'N/A',
                           ),
                         ],
                       ),
@@ -182,7 +208,7 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
                           Wrap(
                             spacing: 10,
                             runSpacing: 10,
-                            children: (data['subjects'] as List<dynamic>)
+                            children: (data['subjects'] as List<dynamic>? ?? [])
                                 .map(
                                   (subject) => Chip(
                                     label: Text(subject.toString()),
@@ -290,26 +316,28 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
         children: [
           Icon(icon, color: primaryColor, size: 22),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  color: subtleTextColor,
-                  fontSize: 15,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: subtleTextColor,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  color: textColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
