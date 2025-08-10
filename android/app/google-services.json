@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "791286743689",
+    "project_id": "karreoapp",
+    "storage_bucket": "karreoapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:791286743689:android:b8dce2abb24b0eade37c58",
+        "android_client_info": {
+          "package_name": "com.example.karreoapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "791286743689-l61d1l13l2a2egdm3jb5dm1p6mdtp6h9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlWU9oAKbJ-FBsb9OechZR7vz7ktpzZjk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "791286743689-l61d1l13l2a2egdm3jb5dm1p6mdtp6h9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "791286743689-jukgt2446ndgivojhq8l69boalt2agco.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.karreoapp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
