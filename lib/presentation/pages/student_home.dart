@@ -30,7 +30,8 @@ class Course {
   final int lessonCount;
   final double rating;
 
-  Course({
+  // Use a const constructor for the model
+  const Course({
     required this.icon,
     required this.title,
     required this.lessonCount,
@@ -39,14 +40,13 @@ class Course {
 }
 
 class _StudentHomeState extends State<StudentHome> {
-  // --- Variables from StudentHome UI ---
+  // --- State Variables & Constants ---
   int _selectedSessionType = 0;
   static const Color _primaryGreen = Color(0xFF3AB54A);
   static const Color _darkText = Color(0xFF231F20);
   static const Color _backgroundColor = Color(0xFFEBF6EC);
-  final FocusNode _subjectFocusNode = FocusNode();
 
-  // MODIFIED: Added controller for the subject field
+  final FocusNode _subjectFocusNode = FocusNode();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
@@ -54,26 +54,29 @@ class _StudentHomeState extends State<StudentHome> {
 
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
+
+  // Use `final` for lists that are initialized once and not changed.
   final List<Course> popularCourses = [
-    Course(
+    const Course(
       icon: Icons.computer,
       title: 'Computer Course',
       lessonCount: 15,
       rating: 4.9,
     ),
-    Course(
+    const Course(
       icon: Icons.spellcheck,
       title: 'English Course',
       lessonCount: 13,
       rating: 4.8,
     ),
-    Course(
+    const Course(
       icon: Icons.design_services,
       title: 'Design Course',
       lessonCount: 18,
       rating: 5.0,
     ),
   ];
+
   static const List<String> _subjectSuggestions = <String>[
     'Mathematics',
     'Physics',
@@ -88,7 +91,6 @@ class _StudentHomeState extends State<StudentHome> {
     'Physical Education',
   ];
 
-  // --- Variables from HomeScreen Logic ---
   final user = FirebaseAuth.instance.currentUser;
   Position? _currentPosition;
   String? _locationStatus;
@@ -103,13 +105,24 @@ class _StudentHomeState extends State<StudentHome> {
     _fetchCurrentLocation();
   }
 
-  // --- All logic methods are here ---
+  @override
+  void dispose() {
+    _subjectFocusNode.dispose();
+    _subjectController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  // --- Logic Methods ---
 
   Future<void> _fetchCurrentLocation() async {
     setState(() => _locationStatus = "Fetching location...");
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
+      if (!mounted) return;
       setState(() => _locationStatus = "Location services disabled.");
       return;
     }
@@ -118,12 +131,14 @@ class _StudentHomeState extends State<StudentHome> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
+        if (!mounted) return;
         setState(() => _locationStatus = "Location permission denied.");
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
       setState(
         () => _locationStatus = "Location permission permanently denied.",
       );
@@ -135,17 +150,18 @@ class _StudentHomeState extends State<StudentHome> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
+      // Check if mounted before updating state
+      if (!mounted) return;
+
       setState(() {
         _currentPosition = position;
         _locationStatus = "Location fetched ✅";
       });
 
-      if (mounted) {
-        await _getAddressFromCoordinates(position.latitude, position.longitude);
-      }
+      await _getAddressFromCoordinates(position.latitude, position.longitude);
 
       if (user != null) {
-        final GeoFirePoint geoFirePoint = GeoFirePoint(
+        final geoFirePoint = GeoFirePoint(
           GeoPoint(position.latitude, position.longitude),
         );
 
@@ -161,14 +177,13 @@ class _StudentHomeState extends State<StudentHome> {
         debugPrint("Location updated in Firestore.");
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() => _locationStatus = "Error fetching location: $e");
     }
   }
 
-  // MODIFIED: This function now checks for all fields, calculates duration,
-  // and passes all required data to the results page.
   Future<void> _searchForTutors() async {
-    // 1. VALIDATION: Check if all required fields are filled.
+    // 1. VALIDATION
     if (_subjectController.text.isEmpty ||
         _dateController.text.isEmpty ||
         _timeController.text.isEmpty) {
@@ -178,7 +193,7 @@ class _StudentHomeState extends State<StudentHome> {
           backgroundColor: Colors.orangeAccent,
         ),
       );
-      return; // Stop the function if fields are not filled
+      return;
     }
 
     if (_currentPosition == null) {
@@ -193,21 +208,12 @@ class _StudentHomeState extends State<StudentHome> {
       return;
     }
 
-    // 2. DURATION CALCULATION: Determine duration based on session type.
-    int duration;
-    switch (_selectedSessionType) {
-      case 0: // Single Hour
-        duration = 1;
-        break;
-      case 1: // Custom
-        duration = 2;
-        break;
-      case 2: // Flexible
-        duration = 4;
-        break;
-      default:
-        duration = 1; // Default to 1 hour
-    }
+    // 2. DURATION CALCULATION
+    final int duration = switch (_selectedSessionType) {
+      1 => 2,
+      2 => 4,
+      _ => 1,
+    };
 
     showDialog(
       context: context,
@@ -241,14 +247,10 @@ class _StudentHomeState extends State<StudentHome> {
               .where((doc) => doc.id != user?.uid)
               .map((doc) {
                 final data = doc.data();
-                if (data == null ||
-                    data['location']?['geo']?['geopoint'] == null) {
-                  return null;
-                }
-                final geoPoint =
-                    data['location']['geo']['geopoint'] as GeoPoint;
+                final geoData = data?['location']?['geo']?['geopoint'];
+                if (geoData == null) return null;
 
-                // This is the straight-line distance, good for initial sorting
+                final geoPoint = geoData as GeoPoint;
                 final straightLineDistance =
                     Geolocator.distanceBetween(
                       _currentPosition!.latitude,
@@ -256,11 +258,11 @@ class _StudentHomeState extends State<StudentHome> {
                       geoPoint.latitude,
                       geoPoint.longitude,
                     ) /
-                    1000.0;
+                    1000.0; // in km
 
                 return {
                   "id": doc.id,
-                  "name": data["name"],
+                  "name": data!["name"],
                   "email": data["email"],
                   "distance": straightLineDistance,
                   "medium": data["medium"],
@@ -278,10 +280,9 @@ class _StudentHomeState extends State<StudentHome> {
 
       final topFiveTutors = sortedTutors.take(5).toList();
 
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop(); // Dismiss loading indicator
 
       if (mounted) {
-        // 3. NAVIGATION: Pass all the new data to the next page.
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -289,7 +290,6 @@ class _StudentHomeState extends State<StudentHome> {
               tutors: topFiveTutors,
               studentPosition: _currentPosition!,
               orsApiKey: orsApiKey,
-              // --- PASSING NEW DATA ---
               subject: _subjectController.text,
               date: _dateController.text,
               time: _timeController.text,
@@ -320,10 +320,12 @@ class _StudentHomeState extends State<StudentHome> {
         .collection('students')
         .doc(user!.uid);
     final docSnap = await docRef.get();
+    final data = docSnap.data();
 
-    if (docSnap.exists && docSnap.data()?['location'] != null) {
-      final geoPoint =
-          docSnap.data()!['location']['geo']['geopoint'] as GeoPoint;
+    if (docSnap.exists &&
+        data != null &&
+        data['location']?['geo']?['geopoint'] != null) {
+      final geoPoint = data['location']['geo']['geopoint'] as GeoPoint;
       _showLocationOptionsDialog(geoPoint);
     } else {
       await _fetchCurrentLocation();
@@ -395,57 +397,6 @@ class _StudentHomeState extends State<StudentHome> {
     );
   }
 
-  Widget _buildLocationOptionTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: _backgroundColor,
-      borderRadius: BorderRadius.circular(16.0),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16.0),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-          child: Row(
-            children: [
-              Icon(icon, color: _primaryGreen, size: 32),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: _darkText,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: _darkText,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _getAddressFromCoordinates(double lat, double lon) async {
     try {
       List<geocoding.Placemark> placemarks = await geocoding
@@ -453,28 +404,14 @@ class _StudentHomeState extends State<StudentHome> {
       geocoding.Placemark place = placemarks[0];
       final address = '${place.street}, ${place.locality}, ${place.postalCode}';
       if (mounted) {
-        setState(() {
-          _locationController.text = address;
-        });
+        setState(() => _locationController.text = address);
       }
     } catch (e) {
       debugPrint("Error getting address: $e");
       if (mounted) {
-        setState(() {
-          _locationController.text = "Could not find address";
-        });
+        setState(() => _locationController.text = "Could not find address");
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _subjectFocusNode.dispose();
-    _subjectController.dispose(); // MODIFIED: Dispose the new controller
-    _dateController.dispose();
-    _timeController.dispose();
-    _locationController.dispose();
-    super.dispose();
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -504,6 +441,8 @@ class _StudentHomeState extends State<StudentHome> {
       });
     }
   }
+
+  // --- UI Builder Methods ---
 
   @override
   Widget build(BuildContext context) {
@@ -557,6 +496,7 @@ class _StudentHomeState extends State<StudentHome> {
                 ],
               ),
             ),
+            // This SizedBox acts as a placeholder for the search card's height
             const SizedBox(height: 260),
           ],
         ),
@@ -672,7 +612,7 @@ class _StudentHomeState extends State<StudentHome> {
         children: [
           Autocomplete<String>(
             optionsBuilder: (TextEditingValue textEditingValue) {
-              if (textEditingValue.text == '') {
+              if (textEditingValue.text.isEmpty) {
                 return const Iterable<String>.empty();
               }
               return _subjectSuggestions.where((String option) {
@@ -681,8 +621,6 @@ class _StudentHomeState extends State<StudentHome> {
                 );
               });
             },
-            // MODIFIED: This builder now uses our state's _subjectController
-            // to ensure the typed text is captured for the search function.
             fieldViewBuilder:
                 (
                   BuildContext context,
@@ -690,7 +628,7 @@ class _StudentHomeState extends State<StudentHome> {
                   FocusNode fieldFocusNode,
                   VoidCallback onFieldSubmitted,
                 ) {
-                  // Sync the state controller with the field's controller
+                  // Sync state controller with the Autocomplete's internal controller
                   _subjectController.value = fieldTextEditingController.value;
                   return _buildTextField(
                     controller: fieldTextEditingController,
@@ -719,9 +657,7 @@ class _StudentHomeState extends State<StudentHome> {
                           itemBuilder: (BuildContext context, int index) {
                             final String option = options.elementAt(index);
                             return InkWell(
-                              onTap: () {
-                                onSelected(option);
-                              },
+                              onTap: () => onSelected(option),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
                                 child: Text(option),
@@ -733,7 +669,6 @@ class _StudentHomeState extends State<StudentHome> {
                     ),
                   );
                 },
-            // MODIFIED: Also update our state controller on selection.
             onSelected: (String selection) {
               debugPrint('You just selected $selection');
               _subjectController.text = selection;
@@ -808,6 +743,7 @@ class _StudentHomeState extends State<StudentHome> {
     TextEditingController? controller,
     FocusNode? focusNode,
   }) {
+    // This padding can be const
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14.0),
       child: TextField(
@@ -835,6 +771,7 @@ class _StudentHomeState extends State<StudentHome> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+        // This Text widget can be const
         child: const Text(
           "Search Tutors",
           style: TextStyle(
@@ -853,6 +790,7 @@ class _StudentHomeState extends State<StudentHome> {
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
+          // This Text widget can be const
           child: Text(
             "Popular Course",
             style: TextStyle(
@@ -910,21 +848,15 @@ class _StudentHomeState extends State<StudentHome> {
               ),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    course.title,
-                    style: const TextStyle(
-                      color: _darkText,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            Text(
+              course.title,
+              style: const TextStyle(
+                color: _darkText,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 5),
             Text(
@@ -946,6 +878,57 @@ class _StudentHomeState extends State<StudentHome> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationOptionTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: _backgroundColor,
+      borderRadius: BorderRadius.circular(16.0),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16.0),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+          child: Row(
+            children: [
+              Icon(icon, color: _primaryGreen, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _darkText,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _darkText,
+                size: 18,
+              ),
+            ],
+          ),
         ),
       ),
     );

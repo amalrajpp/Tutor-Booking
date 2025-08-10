@@ -9,20 +9,20 @@ import 'package:karreoapp/presentation/pages/tutor_profile.dart';
 import 'package:karreoapp/presentation/pages/upcoming.dart';
 import 'package:rxdart/rxdart.dart'; // Required for combining streams
 
-// NEW: Imports required for location fetching
+// Imports required for location fetching
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
 
-// --- Data Models for the Tutor Dashboard (No changes here) ---
+// --- Data Models (Optimized with const constructors) ---
 
 class TutorStats {
   final int upcomingSessions;
   final int pendingRequests;
   final double monthlyEarnings;
 
-  TutorStats({
+  const TutorStats({
     required this.upcomingSessions,
     required this.pendingRequests,
     required this.monthlyEarnings,
@@ -35,7 +35,7 @@ class TutorAppointment {
   final String subject;
   final DateTime dateTime;
 
-  TutorAppointment({
+  const TutorAppointment({
     required this.studentName,
     required this.studentAvatarUrl,
     required this.subject,
@@ -50,7 +50,7 @@ class BookingRequest {
   final DateTime requestedDateTime;
   final String durationType; // e.g., "Single Hour", "Flexible"
 
-  BookingRequest({
+  const BookingRequest({
     required this.studentName,
     required this.studentAvatarUrl,
     required this.subject,
@@ -69,14 +69,13 @@ class TutorHome extends StatefulWidget {
 }
 
 class _TutorHomeState extends State<TutorHome> {
-  // === Colors from the Karreo App Theme (No changes) ===
+  // --- State & Variables ---
   static const Color _primaryGreen = Color(0xFF3AB54A);
   static const Color _darkText = Color(0xFF231F20);
   static const Color _backgroundColor = Color(0xFFEBF6EC);
 
-  // --- Dummy Data (No changes) ---
-  // Note: _tutorStats is no longer used for live data, only as a fallback.
-  final TutorStats _tutorStats = TutorStats(
+  // Fallback data is now const.
+  final TutorStats _fallbackStats = const TutorStats(
     upcomingSessions: 0,
     pendingRequests: 0,
     monthlyEarnings: 0.00,
@@ -107,10 +106,7 @@ class _TutorHomeState extends State<TutorHome> {
     ),
   ];
 
-  // --- State variables for location logic ---
   final user = FirebaseAuth.instance.currentUser;
-  Position? _currentPosition;
-  String? _locationStatus;
 
   @override
   void initState() {
@@ -118,13 +114,17 @@ class _TutorHomeState extends State<TutorHome> {
     _fetchCurrentLocation();
   }
 
-  // --- NEW: Stream to get live stats from Firestore ---
+  // --- Logic & Data Streams ---
+
   Stream<TutorStats> _getTutorStatsStream() {
     final User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      // Return a stream with zero-value stats if user is not logged in
       return Stream.value(
-        TutorStats(upcomingSessions: 0, pendingRequests: 0, monthlyEarnings: 0),
+        const TutorStats(
+          upcomingSessions: 0,
+          pendingRequests: 0,
+          monthlyEarnings: 0,
+        ),
       );
     }
 
@@ -141,26 +141,26 @@ class _TutorHomeState extends State<TutorHome> {
         .where('sessionTimestamp', isGreaterThanOrEqualTo: Timestamp.now())
         .snapshots();
 
-    // Combine the two streams into one that emits a TutorStats object
     return Rx.combineLatest2(
       pendingStream,
       upcomingStream,
       (QuerySnapshot pending, QuerySnapshot upcoming) => TutorStats(
         pendingRequests: pending.docs.length,
         upcomingSessions: upcoming.docs.length,
-        monthlyEarnings: 0.00, // Static for now
+        monthlyEarnings:
+            0.00, // Static for now, can be replaced with real data later
       ),
     );
   }
 
-  // --- Method to fetch and store location silently (Unchanged) ---
+  // OPTIMIZED: Removed setState calls as _locationStatus is not used in the UI.
+  // This prevents unnecessary widget rebuilds.
   Future<void> _fetchCurrentLocation() async {
     debugPrint("TutorHome: Starting location fetch...");
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       debugPrint("TutorHome: Location services are disabled.");
-      setState(() => _locationStatus = "Location services disabled.");
       return;
     }
 
@@ -169,16 +169,12 @@ class _TutorHomeState extends State<TutorHome> {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         debugPrint("TutorHome: Location permission denied by user.");
-        setState(() => _locationStatus = "Location permission denied.");
         return;
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
       debugPrint("TutorHome: Location permission permanently denied.");
-      setState(
-        () => _locationStatus = "Location permission permanently denied.",
-      );
       return;
     }
 
@@ -186,15 +182,10 @@ class _TutorHomeState extends State<TutorHome> {
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
-      setState(() {
-        _currentPosition = position;
-        _locationStatus = "Location fetched successfully.";
-      });
       debugPrint("TutorHome: Location fetched successfully.");
 
       if (user != null) {
-        final GeoFirePoint geoFirePoint = GeoFirePoint(
+        final geoFirePoint = GeoFirePoint(
           GeoPoint(position.latitude, position.longitude),
         );
 
@@ -213,9 +204,10 @@ class _TutorHomeState extends State<TutorHome> {
       }
     } catch (e) {
       debugPrint("TutorHome: Error fetching location: $e");
-      setState(() => _locationStatus = "Error fetching location: $e");
     }
   }
+
+  // --- UI Builder Methods ---
 
   @override
   Widget build(BuildContext context) {
@@ -229,11 +221,25 @@ class _TutorHomeState extends State<TutorHome> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 children: [
-                  _buildSectionHeader('Upcoming Appointments', () {}),
+                  _buildSectionHeader('Upcoming Appointments', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UpcomingBookingsPage(),
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 10),
                   _buildUpcomingAppointmentsList(),
                   const SizedBox(height: 30),
-                  _buildSectionHeader('Pending Requests', () {}),
+                  _buildSectionHeader('Pending Requests', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BookingRequestsPage(),
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 10),
                   _buildPendingRequestsList(),
                   const SizedBox(height: 30),
@@ -245,8 +251,6 @@ class _TutorHomeState extends State<TutorHome> {
       ),
     );
   }
-
-  // --- WIDGET-BUILDING METHODS ---
 
   Widget _buildHeaderAndDashboard() {
     return Stack(
@@ -289,12 +293,10 @@ class _TutorHomeState extends State<TutorHome> {
         ),
         Positioned(
           top: 260,
-          // MODIFIED: Wrapped the card in a StreamBuilder
           child: StreamBuilder<TutorStats>(
             stream: _getTutorStatsStream(),
             builder: (context, snapshot) {
-              // Use dummy data as a fallback or while loading
-              final stats = snapshot.hasData ? snapshot.data! : _tutorStats;
+              final stats = snapshot.data ?? _fallbackStats;
               return _buildDashboardCard(stats);
             },
           ),
@@ -334,7 +336,6 @@ class _TutorHomeState extends State<TutorHome> {
     );
   }
 
-  // MODIFIED: This widget now takes TutorStats as a parameter
   Widget _buildDashboardCard(TutorStats stats) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.9,
@@ -354,7 +355,6 @@ class _TutorHomeState extends State<TutorHome> {
     );
   }
 
-  // MODIFIED: This widget also takes TutorStats to build the columns
   Widget _buildStatsSection(TutorStats stats) {
     final formatCurrency = NumberFormat.currency(
       locale: 'en_IN',
@@ -470,8 +470,7 @@ class _TutorHomeState extends State<TutorHome> {
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final appointment = _upcomingAppointments[index];
-        return _buildAppointmentCard(appointment);
+        return _buildAppointmentCard(_upcomingAppointments[index]);
       },
     );
   }
@@ -514,8 +513,7 @@ class _TutorHomeState extends State<TutorHome> {
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final request = _pendingRequests[index];
-        return _buildRequestCard(request);
+        return _buildRequestCard(_pendingRequests[index]);
       },
     );
   }
