@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:karreoapp/presentation/controllers/auth_controller.dart';
+import 'package:karreoapp/presentation/pages/splash_page.dart';
 import 'package:karreoapp/presentation/pages/student_details_page.dart';
 import 'package:karreoapp/presentation/pages/student_home.dart';
 import 'package:karreoapp/presentation/pages/tutor_details_page.dart';
@@ -36,5 +37,7 @@ class AppPages {
         Get.lazyPut(() => AuthController(AuthRepositoryImpl()));
       }),
     ),
+    // in lib/routes/app_pages.dart
+    GetPage(name: '/splash', page: () => const SplashPage()),
   ];
 }

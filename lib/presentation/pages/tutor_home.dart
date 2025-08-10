@@ -309,15 +309,20 @@ class _TutorHomeState extends State<TutorHome> {
       children: [
         IconButton(
           icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-          onPressed: () {},
-        ),
-        GestureDetector(
-          onTap: () {
+          onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => const SetAvailabilityPage(),
               ),
+            );
+          },
+        ),
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const TutorProfilePage()),
             );
           },
           child: const CircleAvatar(
