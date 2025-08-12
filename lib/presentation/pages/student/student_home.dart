@@ -52,9 +52,6 @@ class StudentHomePage extends GetView<StudentHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // Instantiate the controller. GetX will manage its lifecycle.
-    Get.put(StudentHomeController());
-
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: SingleChildScrollView(
