@@ -46,10 +46,9 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
     _calculateAllDrivingRoutes();
   }
 
-  // --- NEW BOOKING LOGIC ---
+  // --- BOOKING LOGIC ---
 
   Future<void> _handleBooking(Map<String, dynamic> tutorData) async {
-    // Show a loading dialog to the user
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -59,26 +58,32 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
 
     final User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
-      Navigator.of(context).pop(); // Dismiss loading
+      if (mounted) Navigator.of(context).pop();
       _showErrorDialog("You must be logged in to book a session.");
       return;
     }
 
-    // Prepare data for Firestore
     final studentId = currentUser.uid;
     final studentName = currentUser.displayName ?? "Student";
-    final tutorId =
-        tutorData['id']; // Assumes the tutor's UID is passed as 'id'
+    final tutorId = tutorData['id'];
     final tutorName = tutorData['name'];
 
-    // Convert date and time strings to the required formats
+    // Prepare date and time for checking
     final DateTime sessionDate = DateFormat('yMMMd').parse(widget.date);
+    final DateTime sessionTime = DateFormat('h:mm a').parse(widget.time);
     final String availabilityDocId =
         "${tutorId}_${DateFormat('yyyy-MM-dd').format(sessionDate)}";
-    final DateTime sessionTime = DateFormat('h:mm a').parse(widget.time);
-    final String timeSlotKey = DateFormat('HH:mm').format(sessionTime);
 
-    // Get references to Firestore documents
+    final Timestamp sessionTimestamp = Timestamp.fromDate(
+      DateTime(
+        sessionDate.year,
+        sessionDate.month,
+        sessionDate.day,
+        sessionTime.hour,
+        sessionTime.minute,
+      ),
+    );
+
     final availabilityDocRef = FirebaseFirestore.instance
         .collection('tutorAvailabilities')
         .doc(availabilityDocId);
@@ -88,7 +93,7 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
 
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        // 1. Read the tutor's availability for the given day
+        // 1. Read the tutor's general availability for the day
         final availabilitySnapshot = await transaction.get(availabilityDocRef);
 
         if (!availabilitySnapshot.exists) {
@@ -96,25 +101,70 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
         }
 
         final availabilityData = availabilitySnapshot.data()!;
-        final timeSlots = availabilityData['timeSlots'] as Map<String, dynamic>;
-        final slotData = timeSlots[timeSlotKey];
+        final availabilityType = availabilityData['type'] as String;
 
-        // 2. Verify the slot is available
-        if (slotData == null || slotData['status'] != 'available') {
-          throw ('This time slot is no longer available. Please select another.');
+        // 2. Check if the requested time is valid based on the availability type
+        bool isTimeSlotAvailable = false;
+        final requestedTime = TimeOfDay.fromDateTime(sessionTime);
+        final requestedTimeAsDouble =
+            requestedTime.hour + requestedTime.minute / 60.0;
+
+        switch (availabilityType) {
+          case 'fullDay':
+            if (requestedTimeAsDouble >= 8.0 && requestedTimeAsDouble < 21.0) {
+              isTimeSlotAvailable = true;
+            }
+            break;
+          case 'morning':
+            if (requestedTimeAsDouble >= 8.0 && requestedTimeAsDouble < 12.0) {
+              isTimeSlotAvailable = true;
+            }
+            break;
+          case 'afternoon':
+            if (requestedTimeAsDouble >= 13.0 && requestedTimeAsDouble < 21.0) {
+              isTimeSlotAvailable = true;
+            }
+            break;
+          case 'custom':
+            final ranges = availabilityData['ranges'] as List<dynamic>? ?? [];
+            for (var range in ranges) {
+              final start = TimeOfDay.fromDateTime(
+                DateFormat('HH:mm').parse(range['start']),
+              );
+              final end = TimeOfDay.fromDateTime(
+                DateFormat('HH:mm').parse(range['end']),
+              );
+              final startAsDouble = start.hour + start.minute / 60.0;
+              final endAsDouble = end.hour + end.minute / 60.0;
+              if (requestedTimeAsDouble >= startAsDouble &&
+                  requestedTimeAsDouble < endAsDouble) {
+                isTimeSlotAvailable = true;
+                break;
+              }
+            }
+            break;
         }
 
-        // 3. Create the booking document data
-        final Timestamp sessionTimestamp = Timestamp.fromDate(
-          DateTime(
-            sessionDate.year,
-            sessionDate.month,
-            sessionDate.day,
-            sessionTime.hour,
-            sessionTime.minute,
-          ),
-        );
+        if (!isTimeSlotAvailable) {
+          throw ('The requested time is outside the tutor\'s available hours.');
+        }
 
+        // 3. Check for a conflicting booking at the exact same time
+        final conflictQuery = FirebaseFirestore.instance
+            .collection('bookings')
+            .where('tutorId', isEqualTo: tutorId)
+            .where('sessionTimestamp', isEqualTo: sessionTimestamp)
+            .limit(1);
+
+        // *** THIS IS THE CORRECTED LINE ***
+        // We execute the query normally, not with transaction.get()
+        final conflictSnapshot = await conflictQuery.get();
+
+        if (conflictSnapshot.docs.isNotEmpty) {
+          throw ('This time slot has just been booked. Please try another time.');
+        }
+
+        // 4. All checks passed, create the booking document
         final bookingData = {
           'studentId': studentId,
           'studentName': studentName,
@@ -127,26 +177,20 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
           'createdAt': FieldValue.serverTimestamp(),
         };
 
-        // 4. Perform the writes: create booking and update availability
         transaction.set(newBookingRef, bookingData);
-        transaction.update(availabilityDocRef, {
-          'timeSlots.$timeSlotKey': {
-            'status': 'booked',
-            'bookingId': newBookingRef.id,
-            'studentId': studentId,
-          },
-        });
       });
 
-      // If transaction completes successfully
+      if (!mounted) return;
       Navigator.of(context).pop(); // Dismiss loading
       _showSuccessDialog();
     } catch (e) {
+      if (!mounted) return;
       Navigator.of(context).pop(); // Dismiss loading
       _showErrorDialog(e.toString());
     }
   }
 
+  //<editor-fold desc="Dialogs and Unchanged Logic">
   void _showSuccessDialog() {
     showDialog(
       context: context,
@@ -158,7 +202,6 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
         actions: [
           TextButton(
             onPressed: () {
-              // Pop twice to dismiss the dialog and go back from the results page
               Navigator.of(context).pop();
               Navigator.of(context).pop();
             },
@@ -185,7 +228,6 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
     );
   }
 
-  // --- UNCHANGED LOGIC ---
   Future<Map<String, dynamic>?> _fetchDrivingRoute(
     GeoPoint tutorGeoPoint,
   ) async {
@@ -212,8 +254,8 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
           data["routes"].isNotEmpty) {
         final summary = data["routes"][0]["summary"];
         return {
-          "distance": summary["distance"] / 1000.0, // in km
-          "duration": summary["duration"] / 60.0, // in minutes
+          "distance": summary["distance"] / 1000.0,
+          "duration": summary["duration"] / 60.0,
         };
       } else {
         debugPrint(
@@ -233,12 +275,12 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
       final route = await _fetchDrivingRoute(tutorData['geoPoint'] as GeoPoint);
       if (mounted) {
         setState(() {
-          _drivingRoutes[i] =
-              route ?? {'error': true}; // Use a special map for errors
+          _drivingRoutes[i] = route ?? {'error': true};
         });
       }
     }
   }
+  //</editor-fold>
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +318,7 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
     );
   }
 
+  //<editor-fold desc="UI Builder Methods (unchanged)">
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -296,7 +339,7 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              "There are no available tutors within a 50km radius. Try checking back later.",
+              "There are no available tutors for this subject. Try checking back later.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
@@ -395,7 +438,6 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      // MODIFIED: onPressed now calls the booking logic
                       onPressed: () => _handleBooking(tutor),
                       child: const Text('Book Now'),
                       style: ElevatedButton.styleFrom(
@@ -485,4 +527,6 @@ class _TutorSearchResultsPageState extends State<TutorSearchResultsPage> {
       );
     }
   }
+
+  //</editor-fold>
 }
