@@ -63,15 +63,8 @@ class TutorHomePage extends GetView<TutorHomeController> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
     // Initialize the controller. GetX handles the lifecycle automatically.
     Get.put(TutorHomeController());
-=======
-    // FIX: Removed `Get.put()` from the build method.
-    // The controller should be initialized before this widget is built,
-    // for example, using a Bindings class associated with your route.
-    // Get.put(TutorHomeController()); // <-- This is an anti-pattern.
->>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -154,21 +147,12 @@ class TutorHomePage extends GetView<TutorHomeController> {
         Positioned(
           top: 260,
           child: StreamBuilder<TutorStats>(
-<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
             stream: controller.tutorStatsStream, // Get stream from controller
             builder: (context, snapshot) {
               final stats =
                   snapshot.data ??
                   controller.fallbackStats; // Use fallback from controller
               return _buildDashboardCard(context, stats);
-=======
-            // The stream now comes from the controller, which is correct.
-            stream: controller.tutorStatsStream,
-            builder: (context, snapshot) {
-              // Use fallback data from the controller if the stream has no data yet.
-              final stats = snapshot.data ?? controller.fallbackStats;
-              return _buildDashboardCard(stats);
->>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
             },
           ),
         ),
@@ -324,12 +308,8 @@ class TutorHomePage extends GetView<TutorHomeController> {
       return const Center(child: Text("No upcoming appointments."));
     }
     return ListView.separated(
-<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
       itemCount:
           controller.upcomingAppointments.length, // Get list from controller
-=======
-      itemCount: controller.upcomingAppointments.length,
->>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -376,11 +356,7 @@ class TutorHomePage extends GetView<TutorHomeController> {
       return const Center(child: Text("You have no pending requests."));
     }
     return ListView.separated(
-<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
       itemCount: controller.pendingRequests.length, // Get list from controller
-=======
-      itemCount: controller.pendingRequests.length,
->>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
