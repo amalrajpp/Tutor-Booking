@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:karreoapp/presentation/controllers/student_home_controller.dart';
 import 'package:karreoapp/presentation/pages/student/student_profile.dart';
 import 'package:karreoapp/presentation/pages/tutor/tutor_home.dart';
+import 'package:karreoapp/presentation/pages/sidebar.dart';
 
 // Model for Course Data
 class Course {
@@ -52,11 +53,10 @@ class StudentHomePage extends GetView<StudentHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    // Instantiate the controller. GetX will manage its lifecycle.
-    Get.put(StudentHomeController());
-
     return Scaffold(
       backgroundColor: _backgroundColor,
+      // --- (Addition) Add the drawer to the Scaffold ---
+      drawer: MarketerzSideMenu(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -88,7 +88,8 @@ class StudentHomePage extends GetView<StudentHomeController> {
               ),
               child: Column(
                 children: [
-                  _buildCustomAppBar(),
+                  // --- (Modification) Pass context to the app bar ---
+                  buildCustomAppBar(context),
                   const SizedBox(height: 25),
                   const Align(
                     alignment: Alignment.centerLeft,
@@ -109,25 +110,6 @@ class StudentHomePage extends GetView<StudentHomeController> {
           ],
         ),
         Positioned(top: 220, child: _buildSearchCard(context)),
-      ],
-    );
-  }
-
-  Widget _buildCustomAppBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-          onPressed: () => Get.to(() => const TutorHomePage()),
-        ),
-        GestureDetector(
-          onTap: () => Get.to(() => const StudentProfilePage()),
-          child: const CircleAvatar(
-            radius: 20,
-            backgroundImage: AssetImage('assets/images/avatar.png'),
-          ),
-        ),
       ],
     );
   }
@@ -548,4 +530,30 @@ class StudentHomePage extends GetView<StudentHomeController> {
       ),
     );
   }
+}
+
+// This was defined in the original file
+
+Widget buildCustomAppBar(BuildContext context) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Builder(
+        builder: (context) {
+          return IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white, size: 30),
+            // This is the crucial part that opens the drawer
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          );
+        },
+      ),
+      GestureDetector(
+        onTap: () => Get.to(() => const StudentProfilePage()),
+        child: const CircleAvatar(
+          radius: 20,
+          backgroundImage: AssetImage('assets/images/avatar.png'),
+        ),
+      ),
+    ],
+  );
 }

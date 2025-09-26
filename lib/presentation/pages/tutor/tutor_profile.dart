@@ -34,25 +34,6 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
         .get();
   }
 
-  // --- LOGOUT FUNCTION ---
-  Future<void> _logout() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      // Navigate to the welcome/login screen and remove all previous routes
-      // IMPORTANT: Replace '/welcome' with your actual route for the login/welcome page.
-      Get.offAllNamed('/login');
-    } catch (e) {
-      // Show an error message if sign-out fails
-      Get.snackbar(
-        'Logout Error',
-        'An error occurred while logging out. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade400,
-        colorText: Colors.white,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,12 +57,6 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
               // Navigate to the details page to edit
               Get.toNamed('/tutorDetails');
             },
-          ),
-          // --- LOGOUT BUTTON ADDED HERE ---
-          IconButton(
-            icon: Icon(Icons.logout_rounded, color: Colors.red.shade400),
-            tooltip: 'Logout',
-            onPressed: _logout, // Calls the logout function
           ),
         ],
       ),
@@ -226,10 +201,16 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
                                 )
                                 .toList(),
                           ),
+                          const SizedBox(height: 30),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 30), // --- Logout Button ---
+                    FadeInUp(
+                      delay: const Duration(milliseconds: 300),
+                      child: _buildLogoutButton(),
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               );
@@ -241,6 +222,31 @@ class _TutorProfilePageState extends State<TutorProfilePage> {
   }
 
   // --- Helper Widgets ---
+  Widget _buildLogoutButton() {
+    return ElevatedButton.icon(
+      onPressed: () async {
+        // You can add a confirmation dialog here if you want
+        await FirebaseAuth.instance.signOut();
+        // Navigate to login/welcome screen
+        Get.offAllNamed('/login');
+      },
+      icon: const Icon(Icons.logout, color: Colors.redAccent),
+      label: Text(
+        "Logout",
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.redAccent,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red.withOpacity(0.1),
+        elevation: 0,
+        fixedSize: const Size.fromHeight(52),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   Widget _buildProfileHeader(String name, String qualification) {
     return Column(

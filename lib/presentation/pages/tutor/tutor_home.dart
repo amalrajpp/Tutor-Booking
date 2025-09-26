@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -62,8 +63,15 @@ class TutorHomePage extends GetView<TutorHomeController> {
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
     // Initialize the controller. GetX handles the lifecycle automatically.
     Get.put(TutorHomeController());
+=======
+    // FIX: Removed `Get.put()` from the build method.
+    // The controller should be initialized before this widget is built,
+    // for example, using a Bindings class associated with your route.
+    // Get.put(TutorHomeController()); // <-- This is an anti-pattern.
+>>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -76,26 +84,20 @@ class TutorHomePage extends GetView<TutorHomeController> {
               child: Column(
                 children: [
                   _buildSectionHeader('Upcoming Appointments', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UpcomingBookingsPage(),
-                      ),
-                    );
+                    // FIX: Using GetX navigation for consistency.
+                    Get.to(() => const UpcomingBookingsPage());
                   }),
                   const SizedBox(height: 10),
-                  _buildUpcomingAppointmentsList(),
+                  // FIX: Using Obx to reactively build the list from the controller's data.
+                  Obx(() => _buildUpcomingAppointmentsList()),
                   const SizedBox(height: 30),
                   _buildSectionHeader('Pending Requests', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BookingRequestsPage(),
-                      ),
-                    );
+                    // FIX: Using GetX navigation for consistency.
+                    Get.to(() => const BookingRequestsPage());
                   }),
                   const SizedBox(height: 10),
-                  _buildPendingRequestsList(),
+                  // FIX: Using Obx for reactive UI updates.
+                  Obx(() => _buildPendingRequestsList()),
                   const SizedBox(height: 30),
                 ],
               ),
@@ -127,33 +129,46 @@ class TutorHomePage extends GetView<TutorHomeController> {
                 children: [
                   _buildCustomAppBar(context),
                   const SizedBox(height: 25),
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Hello, Amal!\nHere's your dashboard.",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        height: 1.3,
+                    // FIX: Getting user name from the controller for better decoupling.
+                    // The controller will handle logic and provide a fallback if the name is null.
+                    child: Obx(
+                      () => Text(
+                        "Hello, ${controller.userName.value}!\nHere's your dashboard.",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          height: 1.3,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 100),
+            const SizedBox(height: 100), // Space for the dashboard card
           ],
         ),
         Positioned(
           top: 260,
           child: StreamBuilder<TutorStats>(
+<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
             stream: controller.tutorStatsStream, // Get stream from controller
             builder: (context, snapshot) {
               final stats =
                   snapshot.data ??
                   controller.fallbackStats; // Use fallback from controller
               return _buildDashboardCard(context, stats);
+=======
+            // The stream now comes from the controller, which is correct.
+            stream: controller.tutorStatsStream,
+            builder: (context, snapshot) {
+              // Use fallback data from the controller if the stream has no data yet.
+              final stats = snapshot.data ?? controller.fallbackStats;
+              return _buildDashboardCard(stats);
+>>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
             },
           ),
         ),
@@ -168,24 +183,23 @@ class TutorHomePage extends GetView<TutorHomeController> {
         IconButton(
           icon: const Icon(Icons.menu, color: Colors.white, size: 30),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SetAvailabilityPage(),
-              ),
-            );
+            Get.to(() => const SetAvailabilityPage());
           },
         ),
         GestureDetector(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TutorProfilePage()),
-            );
+            Get.to(() => const TutorProfilePage());
           },
-          child: const CircleAvatar(
-            radius: 20,
-            backgroundImage: AssetImage('assets/images/avatar.png'),
+          // FIX: Avatar image is now reactive and fetched from the controller.
+          child: Obx(
+            () => CircleAvatar(
+              radius: 20,
+              backgroundImage:
+                  (controller.userAvatarUrl.value.isNotEmpty
+                          ? NetworkImage(controller.userAvatarUrl.value)
+                          : const AssetImage('assets/images/avatar.png'))
+                      as ImageProvider,
+            ),
           ),
         ),
       ],
@@ -194,7 +208,7 @@ class TutorHomePage extends GetView<TutorHomeController> {
 
   Widget _buildDashboardCard(BuildContext context, TutorStats stats) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.9,
+      width: Get.width * 0.9,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -226,14 +240,7 @@ class TutorHomePage extends GetView<TutorHomeController> {
           'Upcoming',
           Icons.event_note,
           Colors.blue,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const UpcomingBookingsPage(),
-              ),
-            );
-          },
+          () => Get.to(() => const UpcomingBookingsPage()),
         ),
         _buildStatColumn(
           context,
@@ -241,14 +248,7 @@ class TutorHomePage extends GetView<TutorHomeController> {
           'Requests',
           Icons.hourglass_top,
           Colors.orange,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BookingRequestsPage(),
-              ),
-            );
-          },
+          () => Get.to(() => const BookingRequestsPage()),
         ),
         _buildStatColumn(
           context,
@@ -256,12 +256,7 @@ class TutorHomePage extends GetView<TutorHomeController> {
           'Earnings',
           Icons.account_balance_wallet,
           _primaryGreen,
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const EarningsPage()),
-            );
-          },
+          () => Get.to(() => const EarningsPage()),
         ),
       ],
     );
@@ -324,9 +319,17 @@ class TutorHomePage extends GetView<TutorHomeController> {
   }
 
   Widget _buildUpcomingAppointmentsList() {
+    // If the list is empty, show a helpful message.
+    if (controller.upcomingAppointments.isEmpty) {
+      return const Center(child: Text("No upcoming appointments."));
+    }
     return ListView.separated(
+<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
       itemCount:
           controller.upcomingAppointments.length, // Get list from controller
+=======
+      itemCount: controller.upcomingAppointments.length,
+>>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
@@ -368,8 +371,16 @@ class TutorHomePage extends GetView<TutorHomeController> {
   }
 
   Widget _buildPendingRequestsList() {
+    // If the list is empty, show a helpful message.
+    if (controller.pendingRequests.isEmpty) {
+      return const Center(child: Text("You have no pending requests."));
+    }
     return ListView.separated(
+<<<<<<< HEAD:lib/presentation/pages/tutor/tutor_home.dart
       itemCount: controller.pendingRequests.length, // Get list from controller
+=======
+      itemCount: controller.pendingRequests.length,
+>>>>>>> ea2833fa711311414f9e571d5b7de6404119071f:lib/presentation/pages/tutor_home.dart
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
