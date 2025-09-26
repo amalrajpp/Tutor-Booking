@@ -1,22 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:karreoapp/presentation/pages/custom.dart';
-import 'package:karreoapp/presentation/pages/earning.dart';
-import 'package:karreoapp/presentation/pages/request.dart';
-import 'package:karreoapp/presentation/pages/student_profile.dart';
-import 'package:karreoapp/presentation/pages/tutor_availability.dart';
-import 'package:karreoapp/presentation/pages/tutor_profile.dart';
-import 'package:karreoapp/presentation/pages/upcoming.dart';
-import 'package:rxdart/rxdart.dart'; // Required for combining streams
+import 'package:karreoapp/presentation/controllers/tutor_home_controller.dart';
+import 'package:karreoapp/presentation/pages/tutor/earning.dart';
+import 'package:karreoapp/presentation/pages/tutor/request.dart';
+import 'package:karreoapp/presentation/pages/tutor/tutor_availability.dart';
+import 'package:karreoapp/presentation/pages/tutor/tutor_profile.dart';
+import 'package:karreoapp/presentation/pages/tutor/upcoming.dart';
 
-// Imports required for location fetching
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:geoflutterfire_plus/geoflutterfire_plus.dart';
-
-// --- Data Models (Optimized with const constructors) ---
-
+// --- Data Models (Can be moved to separate files for larger projects) ---
 class TutorStats {
   final int upcomingSessions;
   final int pendingRequests;
@@ -48,7 +40,7 @@ class BookingRequest {
   final String studentAvatarUrl;
   final String subject;
   final DateTime requestedDateTime;
-  final String durationType; // e.g., "Single Hour", "Flexible"
+  final String durationType;
 
   const BookingRequest({
     required this.studentName,
@@ -59,164 +51,26 @@ class BookingRequest {
   });
 }
 
-// --- Tutor Home Page Widget ---
+// --- Tutor Home Page Widget (View) ---
+class TutorHomePage extends GetView<TutorHomeController> {
+  const TutorHomePage({super.key});
 
-class TutorHome extends StatefulWidget {
-  const TutorHome({super.key});
-
-  @override
-  State<TutorHome> createState() => _TutorHomeState();
-}
-
-class _TutorHomeState extends State<TutorHome> {
-  // --- State & Variables ---
+  // --- UI Constants ---
   static const Color _primaryGreen = Color(0xFF3AB54A);
   static const Color _darkText = Color(0xFF231F20);
   static const Color _backgroundColor = Color(0xFFEBF6EC);
 
-  // Fallback data is now const.
-  final TutorStats _fallbackStats = const TutorStats(
-    upcomingSessions: 0,
-    pendingRequests: 0,
-    monthlyEarnings: 0.00,
-  );
-
-  final List<TutorAppointment> _upcomingAppointments = [
-    TutorAppointment(
-      studentName: 'Riya Sharma',
-      studentAvatarUrl: 'assets/images/avatar.png',
-      subject: 'Physics - Grade 12',
-      dateTime: DateTime.now().add(const Duration(days: 1, hours: 2)),
-    ),
-    TutorAppointment(
-      studentName: 'Aarav Singh',
-      studentAvatarUrl: 'assets/images/avatar.png',
-      subject: 'Mathematics',
-      dateTime: DateTime.now().add(const Duration(days: 2, hours: 5)),
-    ),
-  ];
-
-  final List<BookingRequest> _pendingRequests = [
-    BookingRequest(
-      studentName: 'Priya Patel',
-      studentAvatarUrl: 'assets/images/avatar.png',
-      subject: 'Chemistry',
-      requestedDateTime: DateTime.now().add(const Duration(days: 4)),
-      durationType: 'Single Hour',
-    ),
-  ];
-
-  final user = FirebaseAuth.instance.currentUser;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCurrentLocation();
-  }
-
-  // --- Logic & Data Streams ---
-
-  Stream<TutorStats> _getTutorStatsStream() {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      return Stream.value(
-        const TutorStats(
-          upcomingSessions: 0,
-          pendingRequests: 0,
-          monthlyEarnings: 0,
-        ),
-      );
-    }
-
-    final pendingStream = FirebaseFirestore.instance
-        .collection('bookings')
-        .where('tutorId', isEqualTo: currentUser.uid)
-        .where('status', isEqualTo: 'pending')
-        .snapshots();
-
-    final upcomingStream = FirebaseFirestore.instance
-        .collection('bookings')
-        .where('tutorId', isEqualTo: currentUser.uid)
-        .where('status', isEqualTo: 'confirmed')
-        .where('sessionTimestamp', isGreaterThanOrEqualTo: Timestamp.now())
-        .snapshots();
-
-    return Rx.combineLatest2(
-      pendingStream,
-      upcomingStream,
-      (QuerySnapshot pending, QuerySnapshot upcoming) => TutorStats(
-        pendingRequests: pending.docs.length,
-        upcomingSessions: upcoming.docs.length,
-        monthlyEarnings:
-            0.00, // Static for now, can be replaced with real data later
-      ),
-    );
-  }
-
-  // OPTIMIZED: Removed setState calls as _locationStatus is not used in the UI.
-  // This prevents unnecessary widget rebuilds.
-  Future<void> _fetchCurrentLocation() async {
-    debugPrint("TutorHome: Starting location fetch...");
-
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      debugPrint("TutorHome: Location services are disabled.");
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        debugPrint("TutorHome: Location permission denied by user.");
-        return;
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      debugPrint("TutorHome: Location permission permanently denied.");
-      return;
-    }
-
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      debugPrint("TutorHome: Location fetched successfully.");
-
-      if (user != null) {
-        final geoFirePoint = GeoFirePoint(
-          GeoPoint(position.latitude, position.longitude),
-        );
-
-        await FirebaseFirestore.instance
-            .collection("tutors")
-            .doc(user!.uid)
-            .update({
-              "location": {
-                'geo': geoFirePoint.data,
-                "timestamp": Timestamp.now(),
-              },
-            });
-        debugPrint(
-          "TutorHome: Location updated in Firestore for user ${user!.uid}",
-        );
-      }
-    } catch (e) {
-      debugPrint("TutorHome: Error fetching location: $e");
-    }
-  }
-
-  // --- UI Builder Methods ---
-
   @override
   Widget build(BuildContext context) {
+    // Initialize the controller. GetX handles the lifecycle automatically.
+    Get.put(TutorHomeController());
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeaderAndDashboard(),
+            _buildHeaderAndDashboard(context),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -252,7 +106,7 @@ class _TutorHomeState extends State<TutorHome> {
     );
   }
 
-  Widget _buildHeaderAndDashboard() {
+  Widget _buildHeaderAndDashboard(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
@@ -271,7 +125,7 @@ class _TutorHomeState extends State<TutorHome> {
               ),
               child: Column(
                 children: [
-                  _buildCustomAppBar(),
+                  _buildCustomAppBar(context),
                   const SizedBox(height: 25),
                   const Align(
                     alignment: Alignment.centerLeft,
@@ -294,10 +148,12 @@ class _TutorHomeState extends State<TutorHome> {
         Positioned(
           top: 260,
           child: StreamBuilder<TutorStats>(
-            stream: _getTutorStatsStream(),
+            stream: controller.tutorStatsStream, // Get stream from controller
             builder: (context, snapshot) {
-              final stats = snapshot.data ?? _fallbackStats;
-              return _buildDashboardCard(stats);
+              final stats =
+                  snapshot.data ??
+                  controller.fallbackStats; // Use fallback from controller
+              return _buildDashboardCard(context, stats);
             },
           ),
         ),
@@ -305,7 +161,7 @@ class _TutorHomeState extends State<TutorHome> {
     );
   }
 
-  Widget _buildCustomAppBar() {
+  Widget _buildCustomAppBar(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -336,7 +192,7 @@ class _TutorHomeState extends State<TutorHome> {
     );
   }
 
-  Widget _buildDashboardCard(TutorStats stats) {
+  Widget _buildDashboardCard(BuildContext context, TutorStats stats) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.9,
       padding: const EdgeInsets.all(16),
@@ -351,11 +207,11 @@ class _TutorHomeState extends State<TutorHome> {
           ),
         ],
       ),
-      child: _buildStatsSection(stats),
+      child: _buildStatsSection(context, stats),
     );
   }
 
-  Widget _buildStatsSection(TutorStats stats) {
+  Widget _buildStatsSection(BuildContext context, TutorStats stats) {
     final formatCurrency = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -365,6 +221,7 @@ class _TutorHomeState extends State<TutorHome> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         _buildStatColumn(
+          context,
           stats.upcomingSessions.toString(),
           'Upcoming',
           Icons.event_note,
@@ -379,6 +236,7 @@ class _TutorHomeState extends State<TutorHome> {
           },
         ),
         _buildStatColumn(
+          context,
           stats.pendingRequests.toString(),
           'Requests',
           Icons.hourglass_top,
@@ -393,6 +251,7 @@ class _TutorHomeState extends State<TutorHome> {
           },
         ),
         _buildStatColumn(
+          context,
           formatCurrency.format(stats.monthlyEarnings),
           'Earnings',
           Icons.account_balance_wallet,
@@ -409,6 +268,7 @@ class _TutorHomeState extends State<TutorHome> {
   }
 
   Widget _buildStatColumn(
+    BuildContext context,
     String value,
     String label,
     IconData icon,
@@ -465,12 +325,13 @@ class _TutorHomeState extends State<TutorHome> {
 
   Widget _buildUpcomingAppointmentsList() {
     return ListView.separated(
-      itemCount: _upcomingAppointments.length,
+      itemCount:
+          controller.upcomingAppointments.length, // Get list from controller
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        return _buildAppointmentCard(_upcomingAppointments[index]);
+        return _buildAppointmentCard(controller.upcomingAppointments[index]);
       },
     );
   }
@@ -508,12 +369,12 @@ class _TutorHomeState extends State<TutorHome> {
 
   Widget _buildPendingRequestsList() {
     return ListView.separated(
-      itemCount: _pendingRequests.length,
+      itemCount: controller.pendingRequests.length, // Get list from controller
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        return _buildRequestCard(_pendingRequests[index]);
+        return _buildRequestCard(controller.pendingRequests[index]);
       },
     );
   }
