@@ -1,43 +1,65 @@
-# 🩸 Blood Donation App
+# 🎓 Student–Tutor Booking App
 
-A **Flutter** application built using **Firebase** and **GetX** that connects blood donors and recipients seamlessly.  
-This app enables users to register as donors, request blood, and manage their profiles with ease.
+A **Flutter** application built using **Firebase** and **GetX**, designed to connect students with qualified tutors for personalized one-on-one tutoring sessions.  
+The app focuses on providing an intuitive, location-based, and scalable tutoring experience with clean architecture and a modern UI.
 
 ---
 
 ## 🚀 Features
 
-- 🔐 **User Authentication** — Secure sign-up and login using Firebase Auth  
-- 🩸 **Blood Requests** — Create, manage, and view nearby requests  
-- 📊 **Dashboard** — Real-time updates powered by Firestore  
-- 👤 **Profile Management** — Update and view donor information  
-- ⚡ **GetX State Management** — Efficient, reactive, and clean architecture  
-- ☁️ **Firebase Integration** — Firestore, Authentication, and Cloud Storage  
-- 🎨 **Modern UI** — Simple, elegant, and responsive design
+### 👨‍🎓 For Students
+- Register and complete profile with academic details.
+- Search nearby tutors by subject, class, and medium.
+- View tutor profiles with qualifications, experience, and ratings.
+- Book one-on-one tutoring sessions seamlessly.
+- Chat with tutors and track booking status.
+
+### 👨‍🏫 For Tutors
+- Create and manage detailed tutor profiles.
+- Manage subjects, classes, and teaching medium.
+- View and accept/reject student booking requests.
+- Track tutoring sessions and receive student feedback.
+
+### ⚙️ Common Features
+- 🔐 **Firebase Authentication** — Email/Google Sign-In  
+- ☁️ **Cloud Firestore** — Real-time data synchronization  
+- 📦 **Firebase Storage** — Store tutor profile pictures  
+- 📍 **Geolocation Search** — Find tutors nearby using `geoflutterfire_plus`  
+- ⚡ **GetX State Management** — Reactive, lightweight, and scalable  
+- 🧱 **Clean Architecture** — Presentation, Domain, and Data layers  
+- 🎨 **Modern UI** — Minimal, responsive design across devices  
+
+---
+
+## 🧱 Tech Stack
+
+| Layer | Technology |
+|-------|-------------|
+| Frontend | Flutter (Dart) |
+| State Management | GetX |
+| Backend | Firebase Firestore |
+| Authentication | Firebase Auth |
+| Storage | Firebase Storage |
+| Location | GeoFlutterFire Plus |
+| Architecture | Clean Architecture |
 
 ---
 
 ## 🖼️ Screenshots
 
-| Signup | Login | Request |
-|:------:|:------:|:--------:|
-| ![signup](https://github.com/amalrajpp/blooddonation/blob/03143a485071cffea1b3ecf34b4577af3760658e/signup.png?raw=true) | ![login](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/login.png?raw=true) | ![request](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/request.png?raw=true) |
+| Register | Login | Dashboard |
+|:---------:|:------:|:----------:|
+| ![register](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/register.jpg?raw=true) | ![login](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/login.jpg?raw=true) | ![home](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/home.jpg?raw=true) |
 
-| Create Request | Dashboard | Profile |
-|:---------------:|:----------:|:--------:|
-| ![create](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/create.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) | ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) |
+| Tutor Profile | Nearby Tutors | Booking Details |
+|:--------------:|:--------------:|:----------------:|
+| ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) | ![details](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/details.png?raw=true) |
 
-| Request Details | Donor List | Confirmation |
-|:----------------:|:-----------:|:--------------:|
-| ![details](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/details.png?raw=true) | ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) |
+| Session Confirmation | Student List | Feedback |
+|:--------------------:|:-------------:|:----------:|
+| ![create](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/create.png?raw=true) | ![request](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/request.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) |
 
 ---
 
-## ⚙️ Getting Started
+## 📂 Project Structure
 
-To get a local copy up and running, follow these steps:
-
-### 1️⃣ Clone the repository
-```bash
-git clone https://github.com/amalrajpp/blooddonation.git
-cd blooddonation
