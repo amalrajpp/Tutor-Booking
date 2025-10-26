@@ -1,49 +1,43 @@
-# 🎓 Student-Tutor Booking App
+# 🩸 Blood Donation App
 
-A Flutter-based mobile application that connects students with qualified tutors for personalized one-on-one tutoring sessions.  
-Built with **Firebase** for backend services and **GetX** for state management, this app provides a smooth, scalable, and modern tutoring experience.
+A **Flutter** application built using **Firebase** and **GetX** that connects blood donors and recipients seamlessly.  
+This app enables users to register as donors, request blood, and manage their profiles with ease.
 
 ---
 
 ## 🚀 Features
 
-### 👨‍🎓 For Students
-- Register and complete profile with academic details.
-- Search for nearby tutors by subject, class, and medium.
-- View tutor profiles with qualification, experience, and ratings.
-- Book one-on-one tutoring sessions easily.
-- Chat with tutors and track booking status.
-
-### 👨‍🏫 For Tutors
-- Create and manage profile (qualification, experience, subjects, classes taught, etc.).
-- View and accept/reject booking requests.
-- Manage tutoring sessions and availability.
-- Get ratings and feedback from students.
-
-### ⚙️ Common Features
-- Firebase Authentication (Email/Google Sign-In)
-- Cloud Firestore for real-time data
-- Firebase Storage for profile pictures
-- Geolocation-based tutor search (using `geoflutterfire_plus`)
-- GetX for reactive state management and navigation
-- Clean Architecture for maintainable and scalable code
-- Responsive UI with a minimal, modern design
+- 🔐 **User Authentication** — Secure sign-up and login using Firebase Auth  
+- 🩸 **Blood Requests** — Create, manage, and view nearby requests  
+- 📊 **Dashboard** — Real-time updates powered by Firestore  
+- 👤 **Profile Management** — Update and view donor information  
+- ⚡ **GetX State Management** — Efficient, reactive, and clean architecture  
+- ☁️ **Firebase Integration** — Firestore, Authentication, and Cloud Storage  
+- 🎨 **Modern UI** — Simple, elegant, and responsive design
 
 ---
 
-## 🧱 Tech Stack
+## 🖼️ Screenshots
 
-| Layer | Technology |
-|-------|-------------|
-| Frontend | Flutter (Dart) |
-| State Management | GetX |
-| Backend | Firebase Firestore |
-| Authentication | Firebase Auth |
-| Storage | Firebase Storage |
-| Maps / Location | GeoFlutterFire Plus |
-| Architecture | Clean Architecture (Presentation, Domain, Data layers) |
+| Signup | Login | Request |
+|:------:|:------:|:--------:|
+| ![signup](https://github.com/amalrajpp/blooddonation/blob/03143a485071cffea1b3ecf34b4577af3760658e/signup.png?raw=true) | ![login](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/login.png?raw=true) | ![request](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/request.png?raw=true) |
+
+| Create Request | Dashboard | Profile |
+|:---------------:|:----------:|:--------:|
+| ![create](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/create.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) | ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) |
+
+| Request Details | Donor List | Confirmation |
+|:----------------:|:-----------:|:--------------:|
+| ![details](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/details.png?raw=true) | ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) |
 
 ---
 
-## 📂 Project Structure
+## ⚙️ Getting Started
 
+To get a local copy up and running, follow these steps:
+
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/amalrajpp/blooddonation.git
+cd blooddonation
