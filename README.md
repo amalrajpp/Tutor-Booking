@@ -51,13 +51,7 @@ The app focuses on providing an intuitive, location-based, and scalable tutoring
 |:---------:|:------:|:----------:|
 | ![register](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/register.jpg?raw=true) | ![login](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/login.jpg?raw=true) | ![home](https://github.com/amalrajpp/Tutor-Booking/blob/200419b26fe2860fddd1b251e3f9af78e5b00c86/home.jpg?raw=true) |
 
-| Tutor Profile | Nearby Tutors | Booking Details |
-|:--------------:|:--------------:|:----------------:|
-| ![profile](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/profile.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) | ![details](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/details.png?raw=true) |
 
-| Session Confirmation | Student List | Feedback |
-|:--------------------:|:-------------:|:----------:|
-| ![create](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/create.png?raw=true) | ![request](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/request.png?raw=true) | ![dash](https://github.com/amalrajpp/blooddonation/blob/7e847eeb78597b586900b405f928ebd893cb9025/dash.png?raw=true) |
 
 ---
 
